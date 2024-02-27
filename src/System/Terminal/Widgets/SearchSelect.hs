@@ -6,7 +6,7 @@ import Data.Ord (Down (Down))
 import Data.Text qualified as Text
 import Data.Text.Rope.Zipper (RopeZipper)
 import Data.Text.Rope.Zipper qualified as RopeZipper
-import Internal.Prelude
+import Prelude
 import System.Terminal.Widgets.Common
 import System.Terminal.Widgets.TextInput
 import Text.Fuzzy qualified as Fuzzy
@@ -92,14 +92,17 @@ moveDown :: SearchSelect a -> SearchSelect a
 moveDown s
     | s.cursorRow < numVisible = s & #cursorRow %~ succ
     | otherwise = s
-    where numVisible = length $ filter (.visible) s.options
+  where
+    numVisible = length $ filter (.visible) s.options
 
 flipCurrent :: forall a. (Eq a) => SearchSelect a -> SearchSelect a
 flipCurrent s
     | Just o <- current =
-        s & #selections %~ if o.value `elem` s.selections
-            then uncheck o.value
-            else check o.value
+        s
+            & #selections
+            %~ if o.value `elem` s.selections
+                then uncheck o.value
+                else check o.value
     | otherwise = s
   where
     current = filter (.visible) s.options !? (s.cursorRow - 1)

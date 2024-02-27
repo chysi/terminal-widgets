@@ -5,8 +5,8 @@ module System.Terminal.Widgets.Common where
 
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Data.Text qualified as Text
-import Internal.Prelude
 import System.Terminal.Render qualified as Render
+import Prelude
 
 class Widget w where
     cursor :: Lens' w Position
@@ -45,8 +45,14 @@ instance IsList Modifiers where
       where
         hasMod c = mods .&. toModifiers c /= mempty
 
-runWidget :: forall m w. (MonadTerminal m, Widget w) => w -> m w
-runWidget = go Nothing
+runWidget'
+    :: forall m w
+     . (MonadTerminal m, Widget w)
+    => ((Maybe w, w) -> m ())
+    -> ((Maybe w, w) -> m ())
+    -> w
+    -> m w
+runWidget' preRender postRender = go Nothing
   where
     cleanup :: w -> m ()
     cleanup w = do
@@ -57,7 +63,9 @@ runWidget = go Nothing
         showCursor
     go :: Maybe w -> w -> m w
     go maybeOld current = do
-        render (maybeOld, current) >> flush
+        preRender (maybeOld, current)
+        render (maybeOld, current)
+        postRender (maybeOld, current)
         awaitEvent >>= \case
             Left Interrupt -> do
                 cleanup current
@@ -68,3 +76,6 @@ runWidget = go Nothing
             Right e -> do
                 let new = handleEvent e current
                 go (Just current) new
+
+runWidget :: forall m w. (MonadTerminal m, Widget w) => w -> m w
+runWidget = runWidget' (const $ pure ()) (const flush)
