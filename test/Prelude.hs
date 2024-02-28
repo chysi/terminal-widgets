@@ -110,7 +110,7 @@ instance (Terminal t) => Terminal (CountingTerminal t) where
 
 type EventOrInterrupt = Either Interrupt Event
 
-data TestTerminal w = TestTerminal
+data TestState w = TestTerminal
     { eventQueue :: TQueue EventOrInterrupt
     , done :: TMVar w 
     , terminal :: CountingTerminal VirtualTerminal
@@ -119,7 +119,7 @@ data TestTerminal w = TestTerminal
 runTestWidget'
     :: (Widget w)
     => w
-    -> ReaderT (TestTerminal w) IO a
+    -> ReaderT (TestState w) IO a
     -> IO (a, w)
 runTestWidget' w runEvents = do
     eventQueue <- newTQueueIO
@@ -151,7 +151,7 @@ runTestWidget' w runEvents = do
                 atomically $ putTMVar done w'
                 pure w'
 
-sendEvent :: EventOrInterrupt -> ReaderT (TestTerminal w) IO w
+sendEvent :: EventOrInterrupt -> ReaderT (TestState w) IO w
 sendEvent e = do
     TestTerminal{..} <- ask
     atomically $ writeTQueue eventQueue e

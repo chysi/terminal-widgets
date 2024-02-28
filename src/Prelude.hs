@@ -15,9 +15,11 @@ module Prelude
     , module Data.Functor
     , module Data.List
     , module Data.List.Extra
+    , module Debug.Trace
     , module Data.Maybe
     , module Data.String
     , module Data.Text
+    , module Data.Text.Prettyprint.Doc
     , module GHC.Generics
     , module GHC.IsList
     , module Data.Generics.Internal.VL
@@ -51,8 +53,10 @@ import Data.Maybe hiding (mapMaybe)
 import Data.String (IsString (fromString))
 import Data.Text (Text)
 import Data.Text qualified as Text
+import Data.Text.Prettyprint.Doc (Pretty (pretty))
 import Data.Text.Rope.Zipper (RopeZipper)
 import Data.Text.Rope.Zipper qualified as RopeZipper
+import Debug.Trace
 import GHC.Generics (Generic)
 import GHC.IsList
 import System.Exit (ExitCode (ExitFailure), exitWith)

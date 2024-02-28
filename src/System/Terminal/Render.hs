@@ -4,6 +4,7 @@
 module System.Terminal.Render where
 
 import Data.Text qualified as Text
+import Prettyprinter
 import Prelude
 
 deriving stock instance Generic Position
@@ -15,32 +16,16 @@ type MonadCursor t m m' =
     , MonadState Position m
     )
 
-render :: (MonadScreen m) => Maybe (Position, Text) -> (Position, Text) -> m ()
-render maybeOld new = flip evalStateT (maybe Position{row = 0, col = 0} fst maybeOld) do
-    let oldLines = maybe [""] (Text.lines . snd) maybeOld
-    let newLines = (Text.lines . snd) new
-    let deltas =
-            filter (\(_, oldText, newText) -> oldText /= newText)
-                $ zip3 [0 :: Int ..] oldLines newLines
-
-    forM_ deltas $ \(row, oldText, newText) -> do
-        moveToRow row
-        lift $ renderLine oldText newText
-        modify $ #col .~ Text.length newText
-
-    -- Clear the remaining old lines
-    when (length oldLines > length newLines) do
-        moveToRow $ length newLines
-        moveToColumn 0
-        lift $ eraseInDisplay EraseForward
-
-    -- Print the remaining new lines
-    when (length newLines > length oldLines) do
-        moveToRow $ length oldLines - 1
-        putLn
-        sequence_ $ intersperse putLn $ putText <$> drop (length oldLines) newLines
-
-    moveToPosition $ fst new
+render
+    :: (MonadTerminal m)
+    => Maybe (Position, Doc (Attribute m))
+    -> (Position, Doc (Attribute m))
+    -> m ()
+render maybeOld (newPos, newDoc) = flip evalStateT (maybe Position{row = 0, col = 0} fst maybeOld) do
+    moveToPosition Position{row = 0, col = 0}
+    lift $ eraseInDisplay EraseForward
+    lift $ putDoc newDoc
+    moveToPosition newPos
   where
     moveToRow :: (MonadCursor t m m') => Int -> m ()
     moveToRow newRow = do
